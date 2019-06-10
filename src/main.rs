@@ -17,7 +17,7 @@ struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Lexer {
-        return Lexer {
+        Lexer {
             index: 0,
             input,
             rules: vec![
@@ -28,7 +28,7 @@ impl<'a> Lexer<'a> {
             .into_iter()
             .map(|(kind, raw_re)| (kind, Regex::new(raw_re).expect("A valid regex")))
             .collect(),
-        };
+        }
     }
 
     pub fn get_token(&mut self) -> Option<Token> {
@@ -62,13 +62,13 @@ impl<'a> Lexer<'a> {
             })
             .collect();
 
-        return candidates
+        candidates
             .into_iter()
             .max_by_key(|token| token.end)
             .map(|token| {
                 self.index = token.end;
                 token
-            });
+            })
     }
 }
 
