@@ -1,4 +1,17 @@
+#[macro_use]
+extern crate lazy_static;
+
 use regex::Regex;
+
+lazy_static! {
+    static ref RULES: Vec<(&'static str, &'static str)> = {
+        return vec![
+            ("ID", r"^[[:alpha:]]\w*"),
+            ("NUM", r"^(\d+|\d+.\d+)"),
+            ("IF", r"^if"),
+        ];
+    };
+}
 
 #[derive(Debug)]
 struct Token<'a> {
@@ -20,14 +33,10 @@ impl<'a> Lexer<'a> {
         Lexer {
             index: 0,
             input,
-            rules: vec![
-                ("ID", r"^[[:alpha:]]\w*"),
-                ("NUM", r"^(\d+|\d+.\d+)"),
-                ("IF", r"^if"),
-            ]
-            .into_iter()
-            .map(|(kind, raw_re)| (kind, Regex::new(raw_re).expect("A valid regex")))
-            .collect(),
+            rules: RULES
+                .iter()
+                .map(|(kind, raw_re)| (*kind, Regex::new(raw_re).expect("A valid regex")))
+                .collect(),
         }
     }
 
