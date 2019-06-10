@@ -26,7 +26,7 @@ impl<'a> Lexer<'a> {
                 ("IF", r"^if"),
             ]
             .into_iter()
-            .map(|(token_type, raw_re)| (token_type, Regex::new(raw_re).unwrap()))
+            .map(|(kind, raw_re)| (kind, Regex::new(raw_re).expect("A valid regex")))
             .collect(),
         };
     }
@@ -40,45 +40,35 @@ impl<'a> Lexer<'a> {
             self.index += 1
         }
 
-        println!("INDEX {:?}", self.index);
-
         if self.index >= self.input.len() {
             return None;
         }
 
-        let candidates: Vec<(&'static str, usize, usize, &'a str)> = self
+        let candidates: Vec<Token> = self
             .rules
             .iter()
-            .map(|(token_type, re)| (token_type, re.find(&self.input[self.index..])))
-            .filter(|(_token_type, res)| res.is_some())
-            .map(|(token_type, res)| {
+            .map(|(kind, re)| (kind, re.find(&self.input[self.index..])))
+            .filter(|(_kind, res)| res.is_some())
+            .map(|(kind, res)| {
                 let res = res.unwrap();
                 let start = res.start() + self.index;
                 let end = res.end() + self.index;
-                (*token_type, start, end, &self.input[start..end])
+                Token {
+                    kind,
+                    start,
+                    end,
+                    lexeme: &self.input[start..end],
+                }
             })
             .collect();
 
-        //println!("candidates {:?}", candidates);
-
-        let candidate = candidates
+        return candidates
             .into_iter()
-            .max_by_key(|(_token_type, _start, end, _s)| *end);
-        //println!("THE candidate {:?}", candidate);
-
-        let ret = candidate.map(|(kind, start, end, lexeme)| {
-            self.index = end;
-            Token {
-                kind,
-                start,
-                end,
-                lexeme,
-            }
-        });
-
-        println!("LEXER {:?}", self);
-
-        return ret;
+            .max_by_key(|token| token.end)
+            .map(|token| {
+                self.index = token.end;
+                token
+            });
     }
 }
 
@@ -91,7 +81,7 @@ fn main() {
     let mut lexer = Lexer::new("   myVariable123 123 if");
 
     while let Some(token) = lexer.get_token() {
-        println!("Token {:?}", token);
+        println!("{:?}", token);
     }
 
     //let res = Regex::new(r"^[[:alpha:]]\w*").unwrap().find(&" mivariable"[1..] );
