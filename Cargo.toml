@@ -1,0 +1,8 @@
+[package]
+name = "grapqhl_rust_v2"
+version = "0.1.0"
+authors = ["Fran Guijarro <franleplant@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+regex = "*"
