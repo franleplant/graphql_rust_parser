@@ -31,8 +31,8 @@ impl<'a> Lexer<'a> {
         };
     }
 
-    pub fn get_token(&mut self) -> Token {
-        for c in self.input.chars() {
+    pub fn get_token(&mut self) -> Option<Token> {
+        for c in self.input.chars().skip(self.index) {
             if !c.is_whitespace() {
                 break;
             }
@@ -41,6 +41,10 @@ impl<'a> Lexer<'a> {
         }
 
         println!("INDEX {:?}", self.index);
+
+        if self.index >= self.input.len() {
+            return None;
+        }
 
         let candidates: Vec<(&'static str, usize, usize, &'a str)> = self
             .rules
@@ -51,7 +55,7 @@ impl<'a> Lexer<'a> {
                 let res = res.unwrap();
                 let start = res.start() + self.index;
                 let end = res.end() + self.index;
-                (*token_type, start, end, &self.input[start..=end])
+                (*token_type, start, end, &self.input[start..end])
             })
             .collect();
 
@@ -60,29 +64,35 @@ impl<'a> Lexer<'a> {
         let candidate = candidates
             .into_iter()
             .max_by_key(|(_token_type, _start, end, _s)| *end);
-        println!("THE candidate {:?}", candidate);
+        //println!("THE candidate {:?}", candidate);
 
-        //TODO proper error habdling strategy
-        if candidate.is_none() {
-            panic!("FUYUU");
-        }
+        let ret = candidate.map(|(kind, start, end, lexeme)| {
+            self.index = end;
+            Token {
+                kind,
+                start,
+                end,
+                lexeme,
+            }
+        });
 
-        let candidate = candidate.unwrap();
+        println!("LEXER {:?}", self);
 
-        Token {
-            kind: candidate.0,
-            start: candidate.1,
-            end: candidate.2,
-            lexeme: candidate.3,
-        }
+        return ret;
     }
 }
 
 fn main() {
-    let mut lexer = Lexer::new("   myVariable123 123 if");
-    let token = lexer.get_token();
+    let input = "   myVariable123 123 if";
+    for (i, c) in input.chars().enumerate() {
+        println!("{:?} {:?}", i, c);
+    }
 
-    println!("asdasd {:?}", token);
+    let mut lexer = Lexer::new("   myVariable123 123 if");
+
+    while let Some(token) = lexer.get_token() {
+        println!("Token {:?}", token);
+    }
 
     //let res = Regex::new(r"^[[:alpha:]]\w*").unwrap().find(&" mivariable"[1..] );
     //println!("test {:?}", res);
